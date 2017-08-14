@@ -1,3 +1,0 @@
-[console_scripts]
-myhello = debarcode.hello:main
-
