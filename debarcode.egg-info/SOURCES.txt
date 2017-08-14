@@ -1,0 +1,10 @@
+setup.cfg
+debarcode/__init__.py
+debarcode/hello.py
+debarcode.egg-info/PKG-INFO
+debarcode.egg-info/SOURCES.txt
+debarcode.egg-info/dependency_links.txt
+debarcode.egg-info/entry_points.txt
+debarcode.egg-info/not-zip-safe
+debarcode.egg-info/requires.txt
+debarcode.egg-info/top_level.txt
