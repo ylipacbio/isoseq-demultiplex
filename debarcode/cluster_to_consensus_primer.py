@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+
+import sys
+import os
+import os.path as op
+from argparse import ArgumentParser
 from .utils import *
 
 MOVIES = ['m54006_170729_232022', 'm54026_170727_103805', 'm54200_170721_210832', 'm54200_170722_173443']
@@ -223,10 +228,9 @@ def update_simplified_z2c(simplified_z2c, z2c, movie2idx):
     return simplified_z2c
 
 
-def run(flnc_z2p, nfl_z2p):
-    cluster_report_fn = '/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/jobs-root/020/020643/tasks/pbtranscript.tasks.separate_flnc-0/combined/all.cluster_report.csv'
-    flnc_z2c_fn, nfl_z2c_fn = 'flnc.z2c.csv', 'nfl.z2c.csv'
-    o_cluster_dict_csv_fn = 'cluster_dict.csv'
+def cluster_to_consensus_primer(cluster_report_fn, flnc_z2p, nfl_z2p, out_dir):
+    flnc_z2c_fn, nfl_z2c_fn = op.join(out_dir, 'flnc.z2c.csv'), op.join(out_dir, 'nfl.z2c.csv')
+    o_cluster_dict_csv_fn = op.join(out_dir, 'cluster_dict.csv')
     cluster_report_reader = open(cluster_report_fn, 'r')
     cluster_dict_writer = open(o_cluster_dict_csv_fn, 'w')
 
@@ -249,15 +253,35 @@ def run(flnc_z2p, nfl_z2p):
     write_z2c(s_nfl_z2c, nfl_z2c_fn, IDX2MOVIE)
 
 
-def write_other(flnc_z2p, flnc_z2c, nfl_z2p, nfl_z2c):
-    print 'Writing orphan flnc zmws %s' %  ('flnc.orphan.csv')
-    write_ophan_zmws(zmws=flnc_z2p.keys(), simplified_zmws_in_cluster=flnc_z2c.keys(), movie2idx=MOVIE2IDX, o_fn='flnc.orphan.csv')
-    print 'Writing orphan nfl zmws %s' %  ('nfl.orphan.csv')
-    write_ophan_zmws(zmws=nfl_z2p.keys(), simplified_zmws_in_cluster=nfl_z2c.keys(), movie2idx=MOVIE2IDX, o_fn='nfl.orphan.csv')
+#super slow, ignore
+#def write_other(flnc_z2p, flnc_z2c, nfl_z2p, nfl_z2c):
+#    print 'Writing orphan flnc zmws %s' %  ('flnc.orphan.csv')
+#    write_ophan_zmws(zmws=flnc_z2p.keys(), simplified_zmws_in_cluster=flnc_z2c.keys(), movie2idx=MOVIE2IDX, o_fn='flnc.orphan.csv')
+#    print 'Writing orphan nfl zmws %s' %  ('nfl.orphan.csv')
+#    write_ophan_zmws(zmws=nfl_z2p.keys(), simplified_zmws_in_cluster=nfl_z2c.keys(), movie2idx=MOVIE2IDX, o_fn='nfl.orphan.csv')
 
+
+CLUSTER_REPORT_FN = '/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/jobs-root/020/020643/tasks/pbtranscript.tasks.separate_flnc-0/combined/all.cluster_report.csv'
+FLNC_FA_FN, NFL_FA_FN = '/pbi/dept/secondary/siv/yli/isoseq/lima/data/flnc.fasta', '/pbi/dept/secondary/siv/yli/isoseq/lima/data/nfl.fasta'
+
+def get_parser():
+    """return arg parser"""
+    desc = """Find consensus primers of clusters."""
+    parser = ArgumentParser(description=desc)
+    parser.add_argument("flnc_fa_fn", help="Input FLNC FASTA, e.g., %s" % FLNC_FA_FN)
+    parser.add_argument("nfl_fa_fn", help="Input FLNC FASTA, e.g., %s" % NFL_FA_FN)
+    parser.add_argument("cluster_report_fn", help="Input consensus_report_fn, e.g., %s" % CLUSTER_REPORT_FN)
+    parser.add_argument("out_dir", help="Output directory")
+
+def run(args):
+    lazy = False
+    flnc_z2p, nfl_z2p = get_all_z2p(args.flnc_fa_fn, args.nfl_fa_fn, o_dir=args.out_dir, lazy=lazy)
+    cluster_to_consensus_primer(args.cluster_report_fn, flnc_z2p, nfl_z2p, args.out_dir)
+
+
+def main():
+    """main"""
+    sys.exit(run(get_parser().parse_args(sys.argv[1:])))
 
 if __name__ == "__main__":
-    lazy = True
-    flnc_z2p, nfl_z2p = get_all_z2p(lazy=lazy)
-    run(flnc_z2p, nfl_z2p)
-
+    main()

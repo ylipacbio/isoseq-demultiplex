@@ -386,19 +386,18 @@ def get_all_z2c(c_prefix_to_flnc_pickle_fn_dict, c_prefix_to_partial_pickle_fn_d
     return flnc_z2c, nfl_z2c
 
 
-def get_all_z2p(lazy):
+def get_all_z2p(flnc_fa_fn, nfl_fa_fn, o_dir, lazy=False):
     """Get all z2p zmw_to_primer dict"""
     if lazy:
         print 'lazy get_all_z2p'
-        flnc_z2p = pickle.load(open('flnc_z2p.pickle', 'r'))
-        nfl_z2p = pickle.load(open('nfl_z2p.pickle', 'r'))
+        flnc_z2p = pickle.load(open(op.join(o_dir, 'flnc_z2p.pickle'), 'r'))
+        nfl_z2p = pickle.load(open(op.join(o_dir, 'nfl_z2p.pickle'), 'r'))
         return flnc_z2p, nfl_z2p
 
-    draft_fa, flnc_fa_fn, nfl_fa_fn = 'data/draft.fasta', 'data/flnc.fasta', 'data/nfl.fasta'
     flnc_z2p = zmw_to_primer_from_fasta(flnc_fa_fn) # dict{'movie/zmw': int(primer)}, where primer=0, 1 or -1(None)
     nfl_z2p = zmw_to_primer_from_fasta(nfl_fa_fn) # dict{'movie/zmw': int(primer)}, where primer=0, 1 or -1(None)
-    write_dict(flnc_z2p, o_prefix='flnc_z2p', headers=['flnc_zmw', 'classify_primer'])
-    write_dict(nfl_z2p, o_prefix='nfl_z2p', headers=['nfl_zmw', 'classify_primer'])
+    write_dict(flnc_z2p, o_prefix=op.join(o_dir, 'flnc_z2p'), headers=['flnc_zmw', 'classify_primer'])
+    write_dict(nfl_z2p, o_prefix=op.join(o_dir, 'nfl_z2p'), headers=['nfl_zmw', 'classify_primer'])
     return flnc_z2p, nfl_z2p
 
 
