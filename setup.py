@@ -34,9 +34,9 @@ def _get_requirements(file_name):
     return requirements
 
 setup(
-    name='debarcode',
+    name='isoseq-demultiplex',
     version=version,
-    package_dir={'isoseq-demultiplex': 'debarcode'},
+    package_dir={'debarcode': 'debarcode'},
     packages=find_packages('.'),
     license='BSD',
     author='yli',
@@ -45,8 +45,8 @@ setup(
     setup_requires=['nose>=1.0'],
     # Maybe the pbtools-* should really be done in a subparser style
     entry_points={'console_scripts': [
-        'zmw-to-cluster-consensus-primer=zmw_to_cluster_consensus_primer:main',
-        'cluster-to-consensus_primer=cluster_to_consensus_primer:main'
+        'zmw-to-cluster-consensus-primer = debarcode.zmw_to_cluster_consensus_primer:main',
+        'cluster-to-consensus-primer = debarcode.cluster_to_consensus_primer:main'
     ]},
     install_requires=_get_requirements(_get_local_file(_REQUIREMENTS_FILE)),
     tests_require=['nose'],

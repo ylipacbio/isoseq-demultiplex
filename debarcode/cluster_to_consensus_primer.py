@@ -272,9 +272,12 @@ def get_parser():
     parser.add_argument("nfl_fa_fn", help="Input FLNC FASTA, e.g., %s" % NFL_FA_FN)
     parser.add_argument("cluster_report_fn", help="Input consensus_report_fn, e.g., %s" % CLUSTER_REPORT_FN)
     parser.add_argument("out_dir", help="Output directory")
+    return parser
 
 def run(args):
     lazy = False
+    if not op.exists(args.out_dir):
+        raise ValueError("Must create output directory %s" % args.out_dir)
     flnc_z2p, nfl_z2p = get_all_z2p(args.flnc_fa_fn, args.nfl_fa_fn, o_dir=args.out_dir, lazy=lazy)
     cluster_to_consensus_primer(args.cluster_report_fn, flnc_z2p, nfl_z2p, args.out_dir)
 
