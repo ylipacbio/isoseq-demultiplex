@@ -4,11 +4,40 @@ import os
 import os.path as op
 from argparse import ArgumentParser
 from .utils import *
-from .cluster_to_consensus_primer import ClusterDict
+from .cluster_to_consensus_primer import ClusterDict, get_most_common_or_none
 
-def z2cp(flnc_z2c, c2cp):
-    pass
 
+def parse_z2c_line(line):
+    fs = line.strip().split('\t')
+    zmw = fs[0]
+    cids = fs[1][1:-1].split(',')
+    return (zmw, cids)
+
+def yield_zmw_cids_from_z2c_fn(z2c_fn):
+    with open(z2c_fn, 'r') as reader:
+        for line in reader:
+            zmw, cids = parse_z2c_line(line=line)
+            yield (zmw, cids)
+
+
+def get_z2cp(z2c_iterator, c2cp, min_fraction):
+    """
+    ...doctest:
+        >>> z2c = {'movie/0': ['cid1', 'cid2'], 'movie/1': ['cid2', 'cid3'], 'movie/3': ['cid3', 'cid4'], 'movie/4': ['cid4']}
+        >>> c2cp = {'cid1': 0, 'cid2': 0, 'cid3': 1, 'cid4':  None}
+        >>> dict(get_z2cp(z2c.iteritems(), c2cp, 0.6))
+        {'movie/4': None, 'movie/3': None, 'movie/0': 0, 'movie/1': 1}
+    """
+    z2cp = defaultdict(lambda: None)
+    for zmw, cids in z2c_iterator:
+        cprimers = [c2cp[cid] for cid in cids]
+        cprimers_wo_none = [cp for cp in cprimers if cp is not None]
+        ccprimer = get_most_common_or_none(cprimers_wo_none, min_fraction=min_fraction)
+        if len(cids) > 0:
+            z2cp[zmw] = c2cp[cid]
+        else:
+            z2cp[zmw] = None
+    return z2cp
 
 def get_c2cp_from_cluster_dict_reader(cluster_dict_reader, min_fraction):
     """
@@ -41,10 +70,20 @@ def get_parser():
     return parser
 
 def run(args):
-    flnc_z2c_fn = 'flnc_z2c.csv'
-    nfl_z2c_fn = 'nfl_z2c.csv'
-    #cluster_dict_fn = 'cluster_dict.csv'
-    get_c2cp_from_cluster_dict_fn(args.cluster_dict_fn, args.min_fraction)
+    print 'get_c2cp_from_cluster_dict_fn'
+    c2cp = get_c2cp_from_cluster_dict_fn(args.cluster_dict_fn, args.min_fraction)
+
+    print 'get_z2cp(flnc_z2c, c2cp...)'
+    flnc_z2c_iterator = yield_zmw_cids_from_z2c_fn(args.flnc_z2c_fn)
+    flnc_z2cp = get_z2cp(flnc_z2c_iterator, c2cp, args.min_fraction)
+    print 'write_dict(flnc_z2cp)'
+    write_dict(dict(flnc_z2cp), o_prefix=op.join(args.out_dir, 'flnc_z2cp'), headers=['flnc_zmw', 'consensus_primer'])
+
+    print 'get_z2cp(nfl_z2c, c2cp...)'
+    nfl_z2c_iterator = yield_zmw_cids_from_z2c_fn(args.nfl_z2c_fn)
+    nfl_z2cp = get_z2cp(nfl_z2c_iterator, c2cp, args.min_fraction)
+    print 'write_dict(nfl_z2cp)'
+    write_dict(dict(nfl_z2cp), o_prefix=op.join(args.out_dir, 'nfl_z2cp'), headers=['nfl_zmw', 'consensus_primer'])
 
 
 def main():

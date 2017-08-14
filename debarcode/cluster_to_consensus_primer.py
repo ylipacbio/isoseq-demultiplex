@@ -108,7 +108,7 @@ def get_consensus_primer_from_flnc_nfl_primers(flnc_primers, nfl_primers, min_fr
 
 class ClusterDict(object):
     __sep__ = '\t'
-    def __init__(self, cluster_reports, flnc_z2p, nfl_z2p, min_fraction=0.6):
+    def __init__(self, cluster_reports, flnc_z2p, nfl_z2p, min_fraction=0.6, consensus_primer=None, recompute_consensus_primer=True):
         assert len(cluster_reports) > 0
         self.cid = cluster_reports[0].cid
         self.flnc_zmws = [cluster_report.zmw for cluster_report in cluster_reports if cluster_report.is_flnc is True]
@@ -116,9 +116,12 @@ class ClusterDict(object):
         self.flnc_primers = [flnc_z2p[flnc_zmw] for flnc_zmw in self.flnc_zmws]
         self.nfl_primers = [nfl_z2p[nfl_zmw] for nfl_zmw in self.nfl_zmws]
         self.min_fraction = min_fraction
+        if recompute_consensus_primer:
+            self.consensus_primer = self.recompute_consensus_primer()
+        else:
+            self.consensus_primer = consensus_primer
 
-    @property
-    def consensus_primer(self):
+    def recompute_consensus_primer(self):
         return get_consensus_primer_from_flnc_nfl_primers(self.flnc_primers, self.nfl_primers, self.min_fraction, self.cid)
 
     @property
@@ -156,22 +159,41 @@ class ClusterDict(object):
         >>> o.nfl_zmws
         ['movie2/3', 'movie3/4']
         """
-        def int_or_none(x):
-            return None if x == 'None' else int(x)
-
-        def str_or_none(x):
-            return None if x == 'None' else str(x)
-
         fs = s.strip().split(cls.__sep__)
         cid = fs[0]
-        flnc_zmws = [str_or_none(x) for x in fs[1][1:-1].split(',')]
-        nfl_zmws = [str_or_none(x) for x in fs[2][1:-1].split(',')]
-        flnc_primers = [int_or_none(x) for x in fs[3][1:-1].split(',')]
-        nfl_primers = [int_or_none(x) for x in fs[4][1:-1].split(',')]
+        flnc_zmws = str_to_list(fs[1], str_or_none) #[str_or_none(x) for x in fs[1][1:-1].split(',')]
+        nfl_zmws = str_to_list(fs[2], str_or_none) #[str_or_none(x) for x in fs[2][1:-1].split(',')]
+        flnc_primers = str_to_list(fs[3], int_or_none) # [int_or_none(x) for x in fs[3][1:-1].split(',')]
+        nfl_primers = str_to_list(fs[4], int_or_none) #[int_or_none(x) for x in fs[4][1:-1].split(',')]
+        consensus_primer = int_or_none(fs[5])
         reports = [ReportObj(cid, zmw, True) for zmw in flnc_zmws] + [ReportObj(cid, zmw, False) for zmw in nfl_zmws]
         flnc_z2p = dict(zip(flnc_zmws, flnc_primers))
         nfl_z2p = dict(zip(nfl_zmws, nfl_primers))
-        return ClusterDict(reports, flnc_z2p, nfl_z2p, min_fraction)
+        return ClusterDict(reports, flnc_z2p, nfl_z2p, min_fraction, consensus_primer=consensus_primer, recompute_consensus_primer=False)
+
+def int_or_none(x):
+    return None if x == 'None' else int(x)
+
+def str_or_none(x):
+    return None if x == 'None' else str(x)
+
+def str_to_list(s, f):
+    """
+    ...doctest:
+        >>> str_to_list('[]', int_or_none) == []
+        True
+        >>> str_to_list('[]', str_or_none) == []
+        True
+        >>> str_to_list('[1,None]', int_or_none) == [1, None]
+        True
+        >>> str_to_list('[1,None]', str_or_none) == ['1', None]
+        True
+    """
+    if s == '[]':
+        return []
+    else:
+        return [f(item) for item in s[1:-1].split(',')]
+
 
 
 def simplified_zmw(zmw, movie2idx):
@@ -229,7 +251,7 @@ def update_simplified_z2c(simplified_z2c, z2c, movie2idx):
 
 
 def cluster_to_consensus_primer(cluster_report_fn, flnc_z2p, nfl_z2p, out_dir):
-    flnc_z2c_fn, nfl_z2c_fn = op.join(out_dir, 'flnc.z2c.csv'), op.join(out_dir, 'nfl.z2c.csv')
+    flnc_z2c_fn, nfl_z2c_fn = op.join(out_dir, 'flnc_z2c.csv'), op.join(out_dir, 'nfl_z2c.csv')
     o_cluster_dict_csv_fn = op.join(out_dir, 'cluster_dict.csv')
     cluster_report_reader = open(cluster_report_fn, 'r')
     cluster_dict_writer = open(o_cluster_dict_csv_fn, 'w')
