@@ -45,7 +45,7 @@ setup(
     setup_requires=['nose>=1.0'],
     # Maybe the pbtools-* should really be done in a subparser style
     entry_points={'console_scripts': [
-        'zmw-to-consensus-primer = debarcode.zmw_to_cluster_consensus_primer:main',
+        'zmw-to-consensus-primer = debarcode.zmw_to_consensus_primer:main',
         'cluster-to-consensus-primer = debarcode.cluster_to_consensus_primer:main'
     ]},
     install_requires=_get_requirements(_get_local_file(_REQUIREMENTS_FILE)),
